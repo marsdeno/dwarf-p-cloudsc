@@ -59,6 +59,7 @@ endfunction()
 
 set( GPU_VARIANTS scc scc-stack scc-hoist scc-k-caching )
 set( CUDA_VARIANTS scc-cuf scc-cuf-k-caching )
+set( STDPAR_VARIANTS scc scc-k-caching)
 
 if( CMAKE_Fortran_COMPILER_ID MATCHES "Cray" AND CMAKE_Fortran_COMPILER_VERSION VERSION_EQUAL "16.0.1" )
     # Fails to compile with error
@@ -181,6 +182,36 @@ if( HAVE_OMP AND HAVE_OMP_TARGET )
             PRIVATE "-Mcray=pointer"
         )
     endif()
+
+endif()
+
+
+### STDPAR Fortran variants
+
+if( HAVE_STDPAR )
+
+    foreach( variant IN LISTS STDPAR_VARIANTS )
+        string( REPLACE "-" "_" variant_ ${variant} )
+        string( TOUPPER ${variant_} VARIANT_ )
+
+	if( CMAKE_Fortran_COMPILER_ID MATCHES "NVHPC" )
+            cloudsc_add_compile_options(
+                SOURCES
+                    cloudsc_std_par_${variant_}_mod.F90
+                    cloudsc_driver_std_par_${variant_}_mod.F90
+                FLAGS "-stdpar=gpu"
+	    )
+	endif()
+        cloudsc_add_gpu_exe(
+            TARGET      dwarf-cloudsc-gpu-std-par-${variant}
+	    DEFINITIONS CLOUDSC_STD_PAR_${VARIANT_}
+            DRIVER      cloudsc_driver_std_par_${variant_}_mod.F90
+            KERNEL
+                cloudsc_std_par_${variant_}_mod.F90
+                nlev_mod.F90
+            COMMON_LIB  acc
+        )
+    endforeach()
 
 endif()
 
