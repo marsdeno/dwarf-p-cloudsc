@@ -488,16 +488,9 @@ SUBROUTINE CLOUDSC_SCC (NGPTOT, NPROMA, KIDIA, KFDIA, KLON, KGPBLKS, PTSPHY, PT,
     REAL(KIND=JPRB) :: PSUM_SOLQA
     
     
-    
-! #ifdef CLOUDSC_STMT_FUNC
 #include "fcttre.func.h"
 #include "fccld.func.h"
-! #endif
     
-      !DO JL=1,NPROMA
-      !DO JBLK=1,CEILING(REAL(NGPTOT) / REAL(NPROMA)) 
-      
-      ! DO CONCURRENT( JL=1:NPROMA, JBLK=1:CEILING(REAL(NGPTOT) / REAL(NPROMA))) local(ZFOEALFA, ZTP1, ZLCUST, ZLI, ZA, ZAORIG, IPHASE, IMELT, LLFALL, LLINDEX1, LLINDEX3, IORDER, ZLIQFRAC, ZICEFRAC, ZQX, ZQX0, ZQXN, ZQXFG, ZQXNM1, ZFLUXQ, ZPFPLSX, ZLNEG, ZQXN2D, ZQSMIX, ZQSLIQ, ZQSICE, ZFOEEWMT, ZFOEEW, ZFOEELIQT, ZSOLQA, ZSOLQB, ZQLHS, ZVQX, ZRATIO, ZSINKSUM, ZFALLSINK, ZFALLSRCE, ZCONVSRCE, ZCONVSINK, ZPSUPSATSRCE) 
       DO CONCURRENT( JBLK=1:CEILING(REAL(NGPTOT) / REAL(NPROMA)),  JL=1:NPROMA ) local(ZFOEALFA, ZTP1, ZLCUST, ZLI, ZA, ZAORIG, IPHASE, IMELT, LLFALL, LLINDEX1, LLINDEX3, IORDER, ZLIQFRAC, ZICEFRAC, ZQX, ZQX0, ZQXN, ZQXFG, ZQXNM1, ZFLUXQ, ZPFPLSX, ZLNEG, ZQXN2D, ZQSMIX, ZQSLIQ, ZQSICE, ZFOEEWMT, ZFOEEW, ZFOEELIQT, ZSOLQA, ZSOLQB, ZQLHS, ZVQX, ZRATIO, ZSINKSUM, ZFALLSINK, ZFALLSRCE, ZCONVSRCE, ZCONVSINK, ZPSUPSATSRCE) 
       
       !===============================================================================
@@ -580,13 +573,13 @@ SUBROUTINE CLOUDSC_SCC (NGPTOT, NPROMA, KIDIA, KFDIA, KLON, KGPBLKS, PTSPHY, PT,
       ! -----------------------------------------------
       ! INITIALIZATION OF OUTPUT TENDENCIES
       ! -----------------------------------------------
-! $acc loop seq
+!$acc loop seq
       DO JK=1,NLEV
         TENDENCY_LOC(JL, JK, 1, JBLK) = 0.0_JPRB
         TENDENCY_LOC(JL, JK, 2, JBLK) = 0.0_JPRB
         TENDENCY_LOC(JL, JK, 3, JBLK) = 0.0_JPRB
       END DO
-! $acc loop seq
+!$acc loop seq
       DO JM=1,NCLV - 1
         DO JK=1,NLEV
           TENDENCY_LOC(JL, JK, 3+JM, JBLK) = 0.0_JPRB
@@ -594,7 +587,7 @@ SUBROUTINE CLOUDSC_SCC (NGPTOT, NPROMA, KIDIA, KFDIA, KLON, KGPBLKS, PTSPHY, PT,
       END DO
       
       !-- These were uninitialized : meaningful only when we compare error differences
-! $acc loop seq
+!$acc loop seq
       DO JK=1,NLEV
         PCOVPTOT(JL, JK, JBLK) = 0.0_JPRB
         TENDENCY_LOC(JL, JK, 3+NCLV, JBLK) = 0.0_JPRB
@@ -612,7 +605,7 @@ SUBROUTINE CLOUDSC_SCC (NGPTOT, NPROMA, KIDIA, KFDIA, KLON, KGPBLKS, PTSPHY, PT,
 !!      ZVQX(NCLDQS) = YRECLDP%RVSNOW
       ZVQX(NCLDQS) = YRECLDP%RVSNOW
       LLFALL(:) = .false.
-! $acc loop seq
+!$acc loop seq
       DO JM=1,NCLV
         IF (ZVQX(JM) > 0.0_JPRB)         LLFALL(JM) = .true.
         ! falling species
@@ -630,7 +623,7 @@ SUBROUTINE CLOUDSC_SCC (NGPTOT, NPROMA, KIDIA, KFDIA, KLON, KGPBLKS, PTSPHY, PT,
       ! ----------------------
       ! non CLV initialization
       ! ----------------------
-! $acc loop seq
+!$acc loop seq
       DO JK=1,NLEV
         ZTP1(JK) = PT(JL, JK, JBLK) + PTSPHY*TENDENCY_TMP(JL, JK, 1, JBLK)
         ZQX(JK, NCLDQV) = PQ(JL, JK, JBLK) + PTSPHY*TENDENCY_TMP(JL, JK, 3, JBLK)
@@ -642,7 +635,7 @@ SUBROUTINE CLOUDSC_SCC (NGPTOT, NPROMA, KIDIA, KFDIA, KLON, KGPBLKS, PTSPHY, PT,
       ! -------------------------------------
       ! initialization for CLV family
       ! -------------------------------------
-! $acc loop seq
+!$acc loop seq
       DO JM=1,NCLV - 1
         DO JK=1,NLEV
           ZQX(JK, JM) = PCLV(JL, JK, JM, JBLK) + PTSPHY*TENDENCY_TMP(JL, JK, 3+JM, JBLK)
@@ -653,15 +646,16 @@ SUBROUTINE CLOUDSC_SCC (NGPTOT, NPROMA, KIDIA, KFDIA, KLON, KGPBLKS, PTSPHY, PT,
       !-------------
       ! zero arrays
       !-------------
-! $acc loop seq
+!$acc loop seq
       DO JM=1,NCLV
         DO JK=1,NLEV + 1
           ZPFPLSX(JK,JM) = 0.0_JPRB            ! precip fluxes
         END DO
       END DO
       
-! $acc loop seq
+!$acc loop seq
       DO JM=1,NCLV
+        !$acc loop seq
         DO JK=1,NLEV
           ZQXN2D(JK, JM) = 0.0_JPRB            ! end of timestep values in 2D
           ZLNEG(JK, JM) = 0.0_JPRB            ! negative input check
@@ -674,7 +668,7 @@ SUBROUTINE CLOUDSC_SCC (NGPTOT, NPROMA, KIDIA, KFDIA, KLON, KGPBLKS, PTSPHY, PT,
       ! ----------------------------------------------------
       ! Tidy up very small cloud cover or total cloud water
       ! ----------------------------------------------------
-! $acc loop seq
+!$acc loop seq
       DO JK=1,NLEV
 !!        IF (ZQX(JK, NCLDQL) + ZQX(JK, NCLDQI) < YRECLDP%RLMIN .or. ZA(JK) < YRECLDP%RAMIN) THEN
         IF (ZQX(JK, NCLDQL) + ZQX(JK, NCLDQI) < YRECLDP%RLMIN .or. ZA(JK) < YRECLDP%RAMIN) THEN
@@ -705,9 +699,10 @@ SUBROUTINE CLOUDSC_SCC (NGPTOT, NPROMA, KIDIA, KFDIA, KLON, KGPBLKS, PTSPHY, PT,
       ! Tidy up small CLV variables
       ! ---------------------------------
       !DIR$ IVDEP
-! $acc loop seq
+!$acc loop seq
       DO JM=1,NCLV - 1
         !DIR$ IVDEP
+        !$acc loop seq
         DO JK=1,NLEV
           !DIR$ IVDEP
 !!          IF (ZQX(JK, JM) < YRECLDP%RLMIN) THEN
@@ -727,7 +722,7 @@ SUBROUTINE CLOUDSC_SCC (NGPTOT, NPROMA, KIDIA, KFDIA, KLON, KGPBLKS, PTSPHY, PT,
       ! ------------------------------
       ! Define saturation values
       ! ------------------------------
-! $acc loop seq
+!$acc loop seq
       DO JK=1,NLEV
         !----------------------------------------
         ! old *diagnostic* mixed phase saturation
@@ -762,7 +757,7 @@ SUBROUTINE CLOUDSC_SCC (NGPTOT, NPROMA, KIDIA, KFDIA, KLON, KGPBLKS, PTSPHY, PT,
         
       END DO
       
-! $acc loop seq
+!$acc loop seq
       DO JK=1,NLEV
         
         
@@ -799,7 +794,7 @@ SUBROUTINE CLOUDSC_SCC (NGPTOT, NPROMA, KIDIA, KFDIA, KLON, KGPBLKS, PTSPHY, PT,
       !---------------------------------
       ZTRPAUS = 0.1_JPRB
       ZPAPHD = 1.0_JPRB / PAPH(JL, NLEV + 1, JBLK)
-! $acc loop seq
+!$acc loop seq
       DO JK=1,NLEV - 1
         ZSIG = PAP(JL, JK, JBLK)*ZPAPHD
         IF (ZSIG > 0.1_JPRB .and. ZSIG < 0.4_JPRB .and. ZTP1(JK) > ZTP1(JK + 1)) THEN
@@ -827,8 +822,7 @@ SUBROUTINE CLOUDSC_SCC (NGPTOT, NPROMA, KIDIA, KFDIA, KLON, KGPBLKS, PTSPHY, PT,
       !                       START OF VERTICAL LOOP
       !----------------------------------------------------------------------
       
-! $acc loop seq
-!!      DO JK=YRECLDP%NCLDTOP,NLEV
+!$acc loop seq
       DO JK=YRECLDP%NCLDTOP,NLEV
         
         !----------------------------------------------------------------------
@@ -838,6 +832,7 @@ SUBROUTINE CLOUDSC_SCC (NGPTOT, NPROMA, KIDIA, KFDIA, KLON, KGPBLKS, PTSPHY, PT,
         !---------------------------------
         ! First guess microphysics
         !---------------------------------
+        !$acc loop seq
         DO JM=1,NCLV
           ZQXFG(JM) = ZQX(JK, JM)
         END DO
@@ -873,7 +868,9 @@ SUBROUTINE CLOUDSC_SCC (NGPTOT, NPROMA, KIDIA, KFDIA, KLON, KGPBLKS, PTSPHY, PT,
         !------------------------------------------
         ! reset matrix so missing pathways are set
         !------------------------------------------
+        !$acc loop seq
         DO JM=1,NCLV
+          !$acc loop seq
           DO JN=1,NCLV
             ZSOLQB(JN, JM) = 0.0_JPRB
             ZSOLQA(JN, JM) = 0.0_JPRB
@@ -883,6 +880,7 @@ SUBROUTINE CLOUDSC_SCC (NGPTOT, NPROMA, KIDIA, KFDIA, KLON, KGPBLKS, PTSPHY, PT,
         !----------------------------------
         ! reset new microphysics variables
         !----------------------------------
+        !$acc loop seq
         DO JM=1,NCLV
           ZFALLSRCE(JM) = 0.0_JPRB
           ZFALLSINK(JM) = 0.0_JPRB
@@ -1127,6 +1125,7 @@ SUBROUTINE CLOUDSC_SCC (NGPTOT, NPROMA, KIDIA, KFDIA, KLON, KGPBLKS, PTSPHY, PT,
           ZMF = MAX(0.0_JPRB, (PMFU(JL, JK, JBLK) + PMFD(JL, JK, JBLK))*ZDTGDP)
           ZACUST = ZMF*ZANEWM1
           
+          !$acc loop seq
           DO JM=1,NCLV
             IF (.not.LLFALL(JM) .and. IPHASE(JM) > 0) THEN
               ZLCUST(JM) = ZMF*ZQXNM1(JM)
@@ -1144,6 +1143,7 @@ SUBROUTINE CLOUDSC_SCC (NGPTOT, NPROMA, KIDIA, KFDIA, KLON, KGPBLKS, PTSPHY, PT,
           ![#Note: Diagnostic mixed phase should be replaced below]
           ZDQS = ZANEWM1*ZDTFORC*ZDQSMIXDT
           
+          !$acc loop seq
           DO JM=1,NCLV
             IF (.not.LLFALL(JM) .and. IPHASE(JM) > 0) THEN
               ZLFINAL = MAX(0.0_JPRB, ZLCUST(JM) - ZDQS)                !lim to zero
@@ -1686,6 +1686,7 @@ SUBROUTINE CLOUDSC_SCC (NGPTOT, NPROMA, KIDIA, KFDIA, KLON, KGPBLKS, PTSPHY, PT,
         !     There is no vertical memory required from the flux variable
         !----------------------------------------------------------------------
         
+        !$acc loop seq
         DO JM=1,NCLV
           IF (LLFALL(JM) .or. JM == NCLDQI) THEN
             !------------------------
@@ -2007,6 +2008,7 @@ SUBROUTINE CLOUDSC_SCC (NGPTOT, NPROMA, KIDIA, KFDIA, KLON, KGPBLKS, PTSPHY, PT,
         END IF
         
         ! Loop over frozen hydrometeors (ice, snow)
+        !$acc loop seq
         DO JM=1,NCLV
           IF (IPHASE(JM) == 2) THEN
             JN = IMELT(JM)
@@ -2414,6 +2416,7 @@ SUBROUTINE CLOUDSC_SCC (NGPTOT, NPROMA, KIDIA, KFDIA, KLON, KGPBLKS, PTSPHY, PT,
         !--------------------------------------
         ! Evaporate small precipitation amounts
         !--------------------------------------
+        !$acc loop seq
         DO JM=1,NCLV
           IF (LLFALL(JM)) THEN
 !!            IF (ZQXFG(JM) < YRECLDP%RLMIN) THEN
@@ -2453,8 +2456,10 @@ SUBROUTINE CLOUDSC_SCC (NGPTOT, NPROMA, KIDIA, KFDIA, KLON, KGPBLKS, PTSPHY, PT,
         ! since the clipping will alter the balance for the other vars
         !--------------------------------------------------------------
         
+        !$acc loop seq
         DO JM=1,NCLV
 !$claw nodep
+          !$acc loop seq
           DO JN=1,NCLV
             LLINDEX3(JN, JM) = .false.
           END DO
@@ -2464,7 +2469,9 @@ SUBROUTINE CLOUDSC_SCC (NGPTOT, NPROMA, KIDIA, KFDIA, KLON, KGPBLKS, PTSPHY, PT,
         !----------------------------
         ! collect sink terms and mark
         !----------------------------
+        !$acc loop seq
         DO JM=1,NCLV
+        !$acc loop seq
           DO JN=1,NCLV
             ZSINKSUM(JM) = ZSINKSUM(JM) - ZSOLQA(JM, JN)              ! +ve total is bad
           END DO
@@ -2473,6 +2480,7 @@ SUBROUTINE CLOUDSC_SCC (NGPTOT, NPROMA, KIDIA, KFDIA, KLON, KGPBLKS, PTSPHY, PT,
         !---------------------------------------
         ! calculate overshoot and scaling factor
         !---------------------------------------
+        !$acc loop seq
         DO JM=1,NCLV
           ZMAX = MAX(ZQX(JK, JM), ZEPSEC)
           ZRAT = MAX(ZSINKSUM(JM), ZMAX)
@@ -2483,6 +2491,7 @@ SUBROUTINE CLOUDSC_SCC (NGPTOT, NPROMA, KIDIA, KFDIA, KLON, KGPBLKS, PTSPHY, PT,
         ! scale the sink terms, in the correct order,
         ! recalculating the scale factor each time
         !--------------------------------------------
+        !$acc loop seq
         DO JM=1,NCLV
           ZSINKSUM(JM) = 0.0_JPRB
         END DO
@@ -2490,8 +2499,10 @@ SUBROUTINE CLOUDSC_SCC (NGPTOT, NPROMA, KIDIA, KFDIA, KLON, KGPBLKS, PTSPHY, PT,
         !----------------
         ! recalculate sum
         !----------------
+        !$acc loop seq
         DO JM=1,NCLV
           PSUM_SOLQA = 0.0
+          !$acc loop seq
           DO JN=1,NCLV
             PSUM_SOLQA = PSUM_SOLQA + ZSOLQA(JM, JN)
           END DO
@@ -2509,6 +2520,7 @@ SUBROUTINE CLOUDSC_SCC (NGPTOT, NPROMA, KIDIA, KFDIA, KLON, KGPBLKS, PTSPHY, PT,
           ZZRATIO = ZRATIO(JM)
           !DIR$ IVDEP
           !DIR$ PREFERVECTOR
+          !$acc loop seq
           DO JN=1,NCLV
             IF (ZSOLQA(JM, JN) < 0.0_JPRB) THEN
               ZSOLQA(JM, JN) = ZSOLQA(JM, JN)*ZZRATIO
@@ -2524,13 +2536,16 @@ SUBROUTINE CLOUDSC_SCC (NGPTOT, NPROMA, KIDIA, KFDIA, KLON, KGPBLKS, PTSPHY, PT,
         !------------------------
         ! set the LHS of equation
         !------------------------
+        !$acc loop seq
         DO JM=1,NCLV
+        !$acc loop seq
           DO JN=1,NCLV
             !----------------------------------------------
             ! diagonals: microphysical sink terms+transport
             !----------------------------------------------
             IF (JN == JM) THEN
               ZQLHS(JN, JM) = 1.0_JPRB + ZFALLSINK(JM)
+              !$acc loop seq
               DO JO=1,NCLV
                 ZQLHS(JN, JM) = ZQLHS(JN, JM) + ZSOLQB(JO, JN)
               END DO
@@ -2546,11 +2561,13 @@ SUBROUTINE CLOUDSC_SCC (NGPTOT, NPROMA, KIDIA, KFDIA, KLON, KGPBLKS, PTSPHY, PT,
         !------------------------
         ! set the RHS of equation
         !------------------------
+        !$acc loop seq
         DO JM=1,NCLV
           !---------------------------------
           ! sum the explicit source and sink
           !---------------------------------
           ZEXPLICIT = 0.0_JPRB
+          !$acc loop seq
           DO JN=1,NCLV
             ZEXPLICIT = ZEXPLICIT + ZSOLQA(JM, JN)              ! sum over middle index
           END DO
@@ -2569,11 +2586,14 @@ SUBROUTINE CLOUDSC_SCC (NGPTOT, NPROMA, KIDIA, KFDIA, KLON, KGPBLKS, PTSPHY, PT,
         !       modifications.
         
         ! Non pivoting recursive factorization
+        !$acc loop seq
         DO JN=1,NCLV - 1
           ! number of steps
+          !$acc loop seq
           DO JM=JN + 1,NCLV
             ! row index
             ZQLHS(JM, JN) = ZQLHS(JM, JN) / ZQLHS(JN, JN)
+            !$acc loop seq
             DO IK=JN + 1,NCLV
               ! column index
               ZQLHS(JM, IK) = ZQLHS(JM, IK) - ZQLHS(JM, JN)*ZQLHS(JN, IK)
@@ -2583,14 +2603,18 @@ SUBROUTINE CLOUDSC_SCC (NGPTOT, NPROMA, KIDIA, KFDIA, KLON, KGPBLKS, PTSPHY, PT,
         
         ! Backsubstitution
         !  step 1
+        !$acc loop seq
         DO JN=2,NCLV
+        !$acc loop seq
           DO JM=1,JN - 1
             ZQXN(JN) = ZQXN(JN) - ZQLHS(JN, JM)*ZQXN(JM)
           END DO
         END DO
         !  step 2
         ZQXN(NCLV) = ZQXN(NCLV) / ZQLHS(NCLV, NCLV)
+        !$acc loop seq
         DO JN=NCLV - 1,1,-1
+        !$acc loop seq
           DO JM=JN + 1,NCLV
             ZQXN(JN) = ZQXN(JN) - ZQLHS(JN, JM)*ZQXN(JM)
           END DO
@@ -2600,6 +2624,7 @@ SUBROUTINE CLOUDSC_SCC (NGPTOT, NPROMA, KIDIA, KFDIA, KLON, KGPBLKS, PTSPHY, PT,
         ! Ensure no small values (including negatives) remain in cloud variables nor
         ! precipitation rates.
         ! Evaporate l,i,r,s to water vapour. Latent heating taken into account below
+        !$acc loop seq
         DO JN=1,NCLV - 1
           IF (ZQXN(JN) < ZEPSEC) THEN
             ZQXN(NCLDQV) = ZQXN(NCLDQV) + ZQXN(JN)
@@ -2610,6 +2635,7 @@ SUBROUTINE CLOUDSC_SCC (NGPTOT, NPROMA, KIDIA, KFDIA, KLON, KGPBLKS, PTSPHY, PT,
         !--------------------------------
         ! variables needed for next level
         !--------------------------------
+        !$acc loop seq
         DO JM=1,NCLV
           ZQXNM1(JM) = ZQXN(JM)
           ZQXN2D(JK, JM) = ZQXN(JM)
@@ -2621,6 +2647,7 @@ SUBROUTINE CLOUDSC_SCC (NGPTOT, NPROMA, KIDIA, KFDIA, KLON, KGPBLKS, PTSPHY, PT,
         !     It is this scaled flux that must be used for source to next layer
         !------------------------------------------------------------------------
         
+        !$acc loop seq
         DO JM=1,NCLV
           ZPFPLSX(JK + 1, JM) = ZFALLSINK(JM)*ZQXN(JM)*ZRDTGDP
         END DO
@@ -2639,6 +2666,7 @@ SUBROUTINE CLOUDSC_SCC (NGPTOT, NPROMA, KIDIA, KFDIA, KLON, KGPBLKS, PTSPHY, PT,
         ! 6.1 Temperature and CLV budgets
         !--------------------------------
         
+        !$acc loop seq
         DO JM=1,NCLV - 1
           
           ! calculate fluxes in and out of box for conservation of TL
@@ -2691,7 +2719,7 @@ SUBROUTINE CLOUDSC_SCC (NGPTOT, NPROMA, KIDIA, KFDIA, KLON, KGPBLKS, PTSPHY, PT,
       ! Copy general precip arrays back into PFP arrays for GRIB archiving
       ! Add rain and liquid fluxes, ice and snow fluxes
       !--------------------------------------------------------------------
-! $acc loop seq
+!$acc loop seq
       DO JK=1,NLEV + 1
         PFPLSL(JL, JK, JBLK) = ZPFPLSX(JK, NCLDQR) + ZPFPLSX(JK, NCLDQL)
         PFPLSN(JL, JK, JBLK) = ZPFPLSX(JK, NCLDQS) + ZPFPLSX(JK, NCLDQI)
@@ -2712,7 +2740,7 @@ SUBROUTINE CLOUDSC_SCC (NGPTOT, NPROMA, KIDIA, KFDIA, KLON, KGPBLKS, PTSPHY, PT,
       PFSQLTUR(JL, 1, JBLK) = 0.0_JPRB
       PFSQITUR(JL, 1, JBLK) = 0.0_JPRB
       
-! $acc loop seq
+!$acc loop seq
       DO JK=1,NLEV
         
         ZGDPH_R = -ZRG_R*(PAPH(JL, JK + 1, JBLK) - PAPH(JL, JK, JBLK))*ZQTMST
@@ -2761,7 +2789,7 @@ SUBROUTINE CLOUDSC_SCC (NGPTOT, NPROMA, KIDIA, KFDIA, KLON, KGPBLKS, PTSPHY, PT,
       !-----------------------------------
       ! enthalpy flux due to precipitation
       !-----------------------------------
-! $acc loop seq
+!$acc loop seq
       DO JK=1,NLEV + 1
         PFHPSL(JL, JK, JBLK) = -RLVTT*PFPLSL(JL, JK, JBLK)
         PFHPSN(JL, JK, JBLK) = -RLSTT*PFPLSN(JL, JK, JBLK)
