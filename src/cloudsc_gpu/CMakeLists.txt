@@ -238,7 +238,7 @@ if( HAVE_FIELD_API )
 
     cloudsc_add_gpu_exe(
         TARGET      dwarf-cloudsc-gpu-scc-field-async
-        DEFINITIONS CLOUDSC_GPU_SCC_FIELD
+        DEFINITIONS CLOUDSC_GPU_SCC_FIELD_ASYNC
         DRIVER      cloudsc_driver_gpu_scc_field_async_mod.F90
         KERNEL      cloudsc_gpu_scc_mod.F90
         COMMON_LIB  field_api
