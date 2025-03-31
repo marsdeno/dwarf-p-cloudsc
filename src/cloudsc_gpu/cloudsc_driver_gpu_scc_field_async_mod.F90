@@ -20,6 +20,8 @@ MODULE CLOUDSC_DRIVER_GPU_SCC_FIELD_ASYNC_MOD
   USE CLOUDSC_FLUX_TYPE_MOD, ONLY: CLOUDSC_FLUX_TYPE
   USE CLOUDSC_STATE_TYPE_MOD, ONLY: CLOUDSC_STATE_TYPE
 
+  USE FIELD_ASYNC_MODULE, ONLY: WAIT_FOR_ASYNC_QUEUE
+
   IMPLICIT NONE
 
 CONTAINS
@@ -129,7 +131,7 @@ CONTAINS
     LOCAL_YRECLDP = YRECLDP
     !$acc enter data copyin(LOCAL_YRECLDP)
 
-    BLOCK_BUFFER_SIZE = MIN(256,NGPBLKS)
+    BLOCK_BUFFER_SIZE = MIN(512,NGPBLKS)
     BLOCK_COUNT=(NGPBLKS+BLOCK_BUFFER_SIZE-1)/BLOCK_BUFFER_SIZE
     
     WRITE(0,*), 'BLOCK_BUFFER_SIZE=', BLOCK_BUFFER_SIZE
@@ -280,14 +282,9 @@ CONTAINS
       CALL TIMER%THREAD_START(TID)
       
 
-!$acc data &
-#ifndef FIELD_API_DISABLE_MAPPED_MEMORY 
-!$acc & present( &
-!$acc & LOCAL_YRECLDP, &
-#else
+!$acc parallel loop gang vector_length(NPROMA) &
 !$acc & present(LOCAL_YRECLDP) &
 !$acc & deviceptr( &
-#endif
 !$acc & PT, PQ,TEND_TMP_T,TEND_TMP_Q,&
 !$acc & TEND_TMP_A, TEND_TMP_CLD, TEND_LOC_T, TEND_LOC_Q, &
 !$acc & TEND_LOC_A, TEND_LOC_CLD, PVFA, PVFL, PVFI, &
@@ -303,8 +300,6 @@ CONTAINS
 !$acc & PFSQRF,   PFSQSF ,  PFCQRNG,  PFCQSNG,&
 !$acc & PFSQLTUR, PFSQITUR , &
 !$acc & PFPLSL,   PFPLSN,   PFHPSL,   PFHPSN) &
-!$acc & async(QUEUE)
-!$acc parallel loop gang vector_length(NPROMA) &
 !$acc & async(QUEUE)
       DO IBLLOC=1, BLOCK_SIZE
         IBL= BLOCK_BUFFER_SIZE*BLOCK_IDX+IBLLOC
@@ -341,9 +336,7 @@ CONTAINS
 
       ENDDO
 !$acc end parallel loop
-!$acc end data
 
-      CALL TIMER%THREAD_END(TID)
 
       CALL AUX%F_PLUDE%SYNC_HOST_FORCE(BLK_BOUNDS=BLK_BOUNDS, QUEUE=QUEUE, OFFSET=OFFSET)
       CALL AUX%F_PCOVPTOT%SYNC_HOST_FORCE(BLK_BOUNDS=BLK_BOUNDS, QUEUE=QUEUE, OFFSET=OFFSET)
@@ -370,10 +363,13 @@ CONTAINS
     END DO ! End of block loop
     
 
-!$acc wait
+DO QUEUE=1,NQUEUES
+  CALL WAIT_FOR_ASYNC_QUEUE(QUEUE)
+END DO
 
 !$acc exit data delete(local_yrecldp)
 
+    CALL TIMER%THREAD_END(TID)
     CALL TIMER%END()
 
     ! On GPUs, adding block-level column totals is cumbersome and
