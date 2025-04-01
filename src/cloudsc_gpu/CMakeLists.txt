@@ -237,6 +237,23 @@ if( HAVE_FIELD_API )
     endif()
 
     cloudsc_add_gpu_exe(
+        TARGET      dwarf-cloudsc-gpu-scc-field-blocked
+        DEFINITIONS CLOUDSC_GPU_SCC_FIELD_BLOCKED
+        DRIVER      cloudsc_driver_gpu_scc_field_blocked_mod.F90
+        KERNEL      cloudsc_gpu_scc_mod.F90
+        COMMON_LIB  field_api
+        TEST_ENV
+            NVCOMPILER_ACC_CUDA_HEAPSIZE=64M
+            DEV_ALLOC_SIZE=1073741824
+            $<${HAVE_CUDA}:CLOUDSC_FIELD_API_PINNED=ON>
+    )
+
+    # Importantly, we add the "pinned" flag to the linker command to ensure pinning!
+    if( CMAKE_Fortran_COMPILER_ID MATCHES "NVHPC" AND field_api_HAVE_CUDA )
+        target_link_options( dwarf-cloudsc-gpu-scc-field-blocked-${prec} PUBLIC "-gpu=pinned" )
+    endif()
+
+    cloudsc_add_gpu_exe(
         TARGET      dwarf-cloudsc-gpu-scc-field-async
         DEFINITIONS CLOUDSC_GPU_SCC_FIELD_ASYNC
         DRIVER      cloudsc_driver_gpu_scc_field_async_mod.F90
