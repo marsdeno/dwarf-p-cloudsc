@@ -26,7 +26,7 @@ CONTAINS
 
   SUBROUTINE CLOUDSC_DRIVER_GPU_SCC_FIELD_BLOCKED( &
      & NUMOMP, NPROMA, NLEV, NGPTOT, NGPBLKS, NGPTOTG, KFLDX, PTSPHY, &
-     & AUX, FLUX, TENDENCY_TMP, TENDENCY_LOC, BLOCK_BUFFER_SIZE)
+     & AUX, FLUX, TENDENCY_TMP, TENDENCY_LOC, BLOCKING_CHUNK_SIZE)
 
     ! Driver routine that invokes the optimized CLAW-based CLOUDSC GPU kernel
 
@@ -36,7 +36,7 @@ CONTAINS
     TYPE(CLOUDSC_AUX_TYPE),   INTENT(INOUT)               :: AUX
     TYPE(CLOUDSC_FLUX_TYPE),  INTENT(INOUT)               :: FLUX
     TYPE(CLOUDSC_STATE_TYPE), INTENT(INOUT)               :: TENDENCY_LOC, TENDENCY_TMP
-    INTEGER(KIND=JPIM), INTENT(IN)                        :: BLOCK_BUFFER_SIZE
+    INTEGER(KIND=JPIM), INTENT(IN)                        :: BLOCKING_CHUNK_SIZE
 
     REAL(KIND=JPRB), POINTER, CONTIGUOUS  :: PT(:,:,:)       ! T at start of callpar
     REAL(KIND=JPRB), POINTER, CONTIGUOUS  :: PQ(:,:,:)       ! Q at start of callpar
@@ -102,11 +102,11 @@ CONTAINS
     TYPE(TECLDP) :: LOCAL_YRECLDP
 
     ! double blocking variables
-    INTEGER(KIND=JPIM) :: BLOCK_SIZE            ! block size
-    INTEGER(KIND=JPIM) :: BLOCK_COUNT           ! number of blocks
-    INTEGER(KIND=JPIM) :: BLOCK_IDX             ! idx of current block in [1,BLOCK_COUNT]
-    INTEGER(KIND=JPIM) :: BLOCK_START           ! start of current block in [1,NGPBLKS]
-    INTEGER(KIND=JPIM) :: BLOCK_END             ! end of current block in [1,NGPBLKS]
+    INTEGER(KIND=JPIM) :: CHUNK_SIZE            ! chunk size
+    INTEGER(KIND=JPIM) :: CHUNK_COUNT           ! number of chunks
+    INTEGER(KIND=JPIM) :: CHUNK_IDX             ! idx of current chunk in [1,CHUNK_COUNT]
+    INTEGER(KIND=JPIM) :: BLOCK_START           ! start block of current chunk in [1,NGPBLKS]
+    INTEGER(KIND=JPIM) :: BLOCK_END             ! end block of current chunk in [1,NGPBLKS]
     INTEGER(KIND=JPIM) :: IBLLOC                ! local loop idx inside inner block loop
     INTEGER(KIND=JPIM) :: BLK_BOUNDS(2)         ! Array holding BLOCK_START and BLOCK_END
 
@@ -124,13 +124,13 @@ CONTAINS
     ! moved to the device the in ``acc data`` clause below
     LOCAL_YRECLDP = YRECLDP
 
-    BLOCK_SIZE = MIN(BLOCK_BUFFER_SIZE, NGPBLKS)
-    BLOCK_COUNT= (NGPBLKS+BLOCK_SIZE-1) / BLOCK_SIZE
+    CHUNK_SIZE = MIN(BLOCKING_CHUNK_SIZE, NGPBLKS)
+    CHUNK_COUNT= (NGPBLKS+CHUNK_SIZE-1) / CHUNK_SIZE
 
     ! Block loop for partial offloading
-    DO BLOCK_IDX=0, BLOCK_COUNT-1
-      BLOCK_START=BLOCK_IDX*BLOCK_SIZE+1
-      BLOCK_END=MIN((BLOCK_IDX+1)*BLOCK_SIZE, NGPBLKS)
+    DO CHUNK_IDX=1, CHUNK_COUNT
+      BLOCK_START=(CHUNK_IDX-1)*CHUNK_SIZE+1
+      BLOCK_END=MIN(CHUNK_IDX*CHUNK_SIZE, NGPBLKS)
       BLK_BOUNDS=[BLOCK_START, BLOCK_END]
 
       ! Offload partial fields to device
@@ -223,9 +223,6 @@ CONTAINS
     DO IBL=BLOCK_START,BLOCK_END ! just a way to loop over NGPBLKS
         JKGLO=(IBL-1)*NPROMA+1
         ICEND=MIN(NPROMA, NGPTOT-JKGLO+1)
-      ! DO JKGLO=1,NGPTOT,NPROMA
-      !    IBL=(JKGLO-1)/NPROMA+1
-      !    ICEND=MIN(NPROMA,NGPTOT-JKGLO+1)
 
          CALL CLOUDSC_SCC &
           & (1, ICEND, NPROMA, NLEV, PTSPHY,&
