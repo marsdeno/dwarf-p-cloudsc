@@ -107,6 +107,24 @@ In order to do so, please create a pull request with your contribution and sign 
   minor modifications (i.e. derived types/global paramters handling).
   Turned off by default, activate at the build stage with 
   `--cloudsc-fortran-pyiface=ON`.
+- **dwarf-cloudsc-gpu-scc-field-blocked**: A version that uses FIELD API for
+data offload and SCC the SCC loop layout, with a double blocked driver loop that
+offloads the data in chunks and make it possible to run arbitrarily large problem sizes.
+Two environment variables can be used to configure this variant:
+  * ``CLOUDSC_BLOCKING_CHUNK_SIZE`` (default ``512``) - The chunk size (the number
+of of  ``NPROMA`` blocks) that will be processed in each iteration.
+  * ``CLOUDSC_FIELD_API_PINNED`` (default ``OFF``) - If turned ``ON`` fields will be allocated
+in page-locked memory.
+- **dwarf-cloudsc-gpu-scc-field-async**: A version that uses FIELD API for
+data offload and SCC the SCC loop layout, with a double blocked driver loop that
+offloads the data in chunks and make it possible to run arbitrarily large problem sizes. Three
+environment variables can be used to configure this variant:
+  * ``CLOUDSC_BLOCKING_CHUNK_SIZE`` (default ``512``) - The chunk size (the number
+of ``NPROMA`` blocks) that will be processed in each iteration.
+  * ``CLOUDSC_ASYNC_NQUEUES`` (default ``3``) - The number of queues used by the async variant.
+  * ``CLOUDSC_FIELD_API_PINNED`` (default ``OFF``) - If CUDA ie enabled this variable **should be set to ``ON``**.
+This will ensure that fields are allocated in page-locked memory and that the kernel and data transfers are executed
+asynchronously.
 - **dwarf-cloudsc-fortran-atlas**: A version of **dwarf-cloudsc-fortran** which uses the [Atlas library](https://github.com/ecmwf/atlas) 
   and its Field and FieldSet data stuctures. There are two storage settings for variables. If the environment variable
   CLOUDSC_ATLAS_MULTIFIELD is "0", "OFF", or "FALSE", the variables are managed as atlas::FieldSet, which is an array of atlas::Fields. For other values of CLOUDSC_ATLAS_MULTIFIELD, a batching of variables is used as (BLK_IDX, LEV, VAR_ID, BLK_ID).
