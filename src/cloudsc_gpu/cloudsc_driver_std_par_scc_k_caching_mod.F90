@@ -7,7 +7,6 @@
 ! granted to it by virtue of its status as an intergovernmental organisation
 ! nor does it submit to any jurisdiction.
 MODULE CLOUDSC_DRIVER_STD_PAR_SCC_K_CACHING_MOD
-  USE cudafor
   USE PARKIND1, ONLY: JPIM, JPIB, JPRB, JPRD
   USE YOMPHYDER, ONLY: STATE_TYPE
   USE YOECLDP, ONLY: NCLV, YRECLDP, TECLDP
