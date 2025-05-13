@@ -123,6 +123,10 @@ CONTAINS
 
     ! Global timer for the parallel region
     CALL TIMER%START(NUMOMP)
+    ! Thread timer that measures the total time for kernel + data transfers, as
+    ! opposed to other gpu variants, where this only measures the kernel time.
+    TID = GET_THREAD_NUM()
+    CALL TIMER%THREAD_START(TID)
 
     ! Workaround for PGI / OpenACC oddities:
     ! Create a local copy of the parameter struct to ensure they get
@@ -260,11 +264,6 @@ CONTAINS
       CALL TENDENCY_LOC%F_Q%GET_DEVICE_DATA_FORCE(TEND_LOC_Q, BLK_BOUNDS=BLK_BOUNDS, QUEUE=QUEUE, OFFSET=OFFSET)
       CALL TENDENCY_LOC%F_A%GET_DEVICE_DATA_FORCE(TEND_LOC_A, BLK_BOUNDS=BLK_BOUNDS, QUEUE=QUEUE, OFFSET=OFFSET)
       CALL TENDENCY_LOC%F_CLD%GET_DEVICE_DATA_FORCE(TEND_LOC_CLD, BLK_BOUNDS=BLK_BOUNDS, QUEUE=QUEUE, OFFSET=OFFSET)
-
-
-      ! Local timer for each thread
-      TID = GET_THREAD_NUM()
-      CALL TIMER%THREAD_START(TID)
 
 
 !$acc parallel loop gang vector_length(NPROMA) &

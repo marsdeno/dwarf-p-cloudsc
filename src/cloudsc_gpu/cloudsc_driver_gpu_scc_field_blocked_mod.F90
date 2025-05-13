@@ -116,8 +116,6 @@ CONTAINS
       write(0,1003) NUMPROC,NUMOMP,NGPTOTG,NPROMA,NGPBLKS
     end if
 
-    ! Global timer for the parallel region
-    CALL TIMER%START(NUMOMP)
 
     ! Workaround for PGI / OpenACC oddities:
     ! Create a local copy of the parameter struct to ensure they get
@@ -127,11 +125,19 @@ CONTAINS
     CHUNK_SIZE = MIN(BLOCKING_CHUNK_SIZE, NGPBLKS)
     CHUNK_COUNT= (NGPBLKS+CHUNK_SIZE-1) / CHUNK_SIZE
 
+    ! Global timer for the parallel region
+    CALL TIMER%START(NUMOMP)
+    ! Thread timer that measures the total time for kernel + data transfers, as
+    ! opposed to other gpu variants, where this only measures the kernel time.
+    TID = GET_THREAD_NUM()
+    CALL TIMER%THREAD_START(TID)
+
     ! Block loop for partial offloading
     DO CHUNK_IDX=1, CHUNK_COUNT
       BLOCK_START=(CHUNK_IDX-1)*CHUNK_SIZE+1
       BLOCK_END=MIN(CHUNK_IDX*CHUNK_SIZE, NGPBLKS)
       BLK_BOUNDS=[BLOCK_START, BLOCK_END]
+
 
       ! Offload partial fields to device
       CALL AUX%F_PT%GET_DEVICE_DATA_FORCE(PT, BLK_BOUNDS=BLK_BOUNDS)
@@ -215,9 +221,6 @@ CONTAINS
 !$acc & PFSQLTUR, PFSQITUR , &
 !$acc & PFPLSL,   PFPLSN,   PFHPSL,   PFHPSN)
 
-      ! Local timer for each thread
-      TID = GET_THREAD_NUM()
-      CALL TIMER%THREAD_START(TID)
 
 !$acc parallel loop gang vector_length(NPROMA)
     DO IBL=BLOCK_START,BLOCK_END ! just a way to loop over NGPBLKS
@@ -253,7 +256,6 @@ CONTAINS
 !$acc end parallel loop
 !$acc end data
 
-      CALL TIMER%THREAD_END(TID)
 
       CALL AUX%F_PLUDE%SYNC_HOST_FORCE(BLK_BOUNDS=BLK_BOUNDS)
       CALL AUX%F_PCOVPTOT%SYNC_HOST_FORCE(BLK_BOUNDS=BLK_BOUNDS)
@@ -279,6 +281,7 @@ CONTAINS
 
     END DO ! End of block loop
 
+    CALL TIMER%THREAD_END(TID)
     CALL TIMER%END()
 
     ! On GPUs, adding block-level column totals is cumbersome and
