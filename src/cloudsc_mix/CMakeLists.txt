@@ -6,13 +6,8 @@
 # granted to it by virtue of its status as an intergovernmental organisation
 # nor does it submit to any jurisdiction.
 
-# Define this dwarf variant as an ECBuild feature
-ecbuild_add_option( FEATURE CLOUDSC_MIX
-	DESCRIPTION "Build the mix version CLOUDSC (Fortran driver + OpenMP/OpenACC + HIP/CUDA/SYCL" DEFAULT OFF
-	CONDITION Serialbox_FOUND OR HDF5_FOUND
-)
-
-if( HAVE_CLOUDSC_MIX )
+# only double-precision currently supported
+if( "${prec}" STREQUAL "dp" )
 
     # Define integer IDs corresponding to every language choice
     ## kernel language
@@ -63,8 +58,9 @@ if( HAVE_CLOUDSC_MIX )
     endif()
     
     ecbuild_add_library(
-        TARGET dwarf-cloudsc-gpu-lib
+        TARGET dwarf-cloudsc-gpu-lib-${prec}
         INSTALL_HEADERS LISTED
+	TYPE STATIC
         SOURCES
     	    yoecldp_c.h
       	    cloudsc_c_k_caching.cpp
@@ -73,38 +69,40 @@ if( HAVE_CLOUDSC_MIX )
     	    	$<INSTALL_INTERFACE:include>
             	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     	    PUBLIC_LIBS
-    	        cloudsc-common-lib
+                $<${HAVE_OMP}:OpenMP::OpenMP_Fortran>
+                $<${HAVE_ACC}:OpenACC::OpenACC_Fortran>
+		cloudsc-common-${prec}-lib
     )
 
     # Provide definitions to target
     foreach(_def CUDA_LANG HIP_LANG SYCL_LANG ACC_OFFLOAD OMP_OFFLOAD GPU_LANG GPU_OFFLOAD)
-      target_compile_definitions(dwarf-cloudsc-gpu-lib PUBLIC ${_def}=${${_def}})
+      target_compile_definitions(dwarf-cloudsc-gpu-lib-${prec} PUBLIC ${_def}=${${_def}})
     endforeach()
 
-    target_include_directories(dwarf-cloudsc-gpu-lib PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
+    target_include_directories(dwarf-cloudsc-gpu-lib-${prec} PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 
     # CUDA specific
     if (CLOUDSC_GPU_LANG STREQUAL "CUDA")
       set_source_files_properties(cloudsc_c_k_caching.cpp PROPERTIES LANGUAGE CUDA)
       cloudsc_add_compile_options(
          SOURCES cloudsc_c_k_caching_mod.F90 dwarf_cloudsc_gpu.F90 cloudsc_driver_mod.F90
-         FLAGS   "-cuda") # -gpu=maxrregcount ...
+         FLAGS   "-cuda")
       target_include_directories(
-        dwarf-cloudsc-gpu-lib
+        dwarf-cloudsc-gpu-lib-${prec}
         PUBLIC
         ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
       )
       if (NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
-        target_compile_options(dwarf-cloudsc-gpu-lib PRIVATE $<COMPILE_LANGUAGE:CUDA>)
+        target_compile_options(dwarf-cloudsc-gpu-lib-${prec} PRIVATE $<COMPILE_LANGUAGE:CUDA>)
       else()
-        target_compile_options(dwarf-cloudsc-gpu-lib PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:
+        target_compile_options(dwarf-cloudsc-gpu-lib-${prec} PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:
 	  -gencode arch=compute_${CMAKE_CUDA_ARCHITECTURES},code=sm_${CMAKE_CUDA_ARCHITECTURES}>)
       endif()
-      set_target_properties( dwarf-cloudsc-gpu-lib PROPERTIES CUDA_SEPARABLE_COMPILATION ON) 
+      set_target_properties( dwarf-cloudsc-gpu-lib-${prec} PROPERTIES CUDA_SEPARABLE_COMPILATION ON) 
     # HIP specific
     elseif (CLOUDSC_GPU_LANG STREQUAL "HIP")
       set_source_files_properties(cloudsc_c_k_caching.cpp PROPERTIES LANGUAGE HIP)
-      target_compile_options(dwarf-cloudsc-gpu-lib PRIVATE --offload-arch=gfx90a) 
+      target_compile_options(dwarf-cloudsc-gpu-lib-${prec} PRIVATE --offload-arch=gfx90a) 
     # SYCL specific
     elseif (CLOUDSC_GPU_LANG STREQUAL "SYCL")
     
@@ -113,17 +111,17 @@ if( HAVE_CLOUDSC_MIX )
     endif()
     
     ecbuild_add_executable(
-        TARGET  dwarf-cloudsc-mix
+        TARGET  dwarf-cloudsc-mix-${prec}
 	SOURCES dwarf_cloudsc_gpu.F90 cloudsc_driver_mod.F90
-	LIBS dwarf-cloudsc-gpu-lib
+	LIBS dwarf-cloudsc-gpu-lib-${prec}
     )
 
-    set_target_properties(dwarf-cloudsc-mix PROPERTIES LINKER_LANGUAGE Fortran)
+    set_target_properties(dwarf-cloudsc-mix-${prec} PROPERTIES LINKER_LANGUAGE Fortran)
 
     # CUDA specific
     if (CLOUDSC_GPU_LANG STREQUAL "CUDA")
-      set_target_properties( dwarf-cloudsc-mix PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-      target_link_options(dwarf-cloudsc-mix PRIVATE "-cuda")
+      set_target_properties( dwarf-cloudsc-mix-${prec} PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+      target_link_options(dwarf-cloudsc-mix-${prec} PRIVATE "-cuda")
     # HIP specific 
     elseif (CLOUDSC_GPU_LANG STREQUAL "HIP")
     # SYCL specific

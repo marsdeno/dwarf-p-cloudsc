@@ -59,4 +59,8 @@ foreach( prec IN LISTS CLOUDSC_PRECISIONS )
     add_subdirectory( cloudsc_sycl cloudsc_sycl.${prec} )
   endif()
 
+  if( HAVE_CLOUDSC_MIX )
+    add_subdirectory( cloudsc_mix cloudsc_mix.${prec} )
+  endif()
+
 endforeach()

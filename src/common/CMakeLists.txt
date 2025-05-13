@@ -175,18 +175,6 @@ endif()
 
 ### Common lib for CUDA targets
 
-# if ( ENABLE_CLOUDSC_MIX )
-#   # if (CLOUDSC_GPU_OFFLOAD STREQUAL "ACC")
-#   # HACK: seems like nordc only necessary for NVIDIA machines but not AMD machines
-#   if (CLOUDSC_GPU_LANG STREQUAL "CUDA" OR CLOUDSC_GPU_LANG STREQUAL "SYCL")
-#     cloudsc_add_compile_options(
-#      SOURCES ${CLOUDSC_COMMON_SOURCES}
-#      FLAGS "-gpu=nordc"
-#     )
-#   endif()
-#   # endif()
-# endif()
-
 if( HAVE_CUDA )
     # ========================================================================
     # Compile CUDA fortran files with -cuda.
