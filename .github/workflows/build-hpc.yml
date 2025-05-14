@@ -55,7 +55,7 @@ jobs:
             modules: ~
             build_options: --with-loki=ON --with-field-api=ON
             # TODO: These tests trigger a SIGFPE, to be investigated
-            #  'dwarf-cloudsc-gpu-std-par-scc-k-caching-dp-serial' works with NVHPC 22.11 but not with 24.5
+            #  'dwarf-cloudsc-gpu-std-par-scc-k-caching-dp-serial' works with NVHPC 22.11 but triggers SIGFPE with 24.5
             exclude_tests:
               - dwarf-cloudsc-loki-c-dp-serial
               - dwarf-cloudsc-loki-c-dp-omp
