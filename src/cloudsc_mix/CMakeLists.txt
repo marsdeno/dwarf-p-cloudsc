@@ -84,9 +84,6 @@ if( "${prec}" STREQUAL "dp" )
     # CUDA specific
     if (CLOUDSC_GPU_LANG STREQUAL "CUDA")
       set_source_files_properties(cloudsc_c_k_caching.cpp PROPERTIES LANGUAGE CUDA)
-      cloudsc_add_compile_options(
-         SOURCES cloudsc_c_k_caching_mod.F90 dwarf_cloudsc_gpu.F90 cloudsc_driver_mod.F90
-         FLAGS   "-cuda")
       target_include_directories(
         dwarf-cloudsc-gpu-lib-${prec}
         PUBLIC
@@ -121,7 +118,6 @@ if( "${prec}" STREQUAL "dp" )
     # CUDA specific
     if (CLOUDSC_GPU_LANG STREQUAL "CUDA")
       set_target_properties( dwarf-cloudsc-mix-${prec} PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-      target_link_options(dwarf-cloudsc-mix-${prec} PRIVATE "-cuda")
     # HIP specific 
     elseif (CLOUDSC_GPU_LANG STREQUAL "HIP")
     # SYCL specific
