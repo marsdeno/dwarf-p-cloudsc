@@ -56,7 +56,7 @@ ecbuild_add_option( FEATURE ACC
 
 ecbuild_add_option( FEATURE STDPAR
                     DEFAULT ON
-                    DESCRIPTION "Support for using GPUs with OpenACC"
+                    DESCRIPTION "Support for using GPUs via DO CONCURRENT and OpenACC for global variable offloading"
 		    CONDITION HAVE_ACC )
 
 include(CheckLanguage)
