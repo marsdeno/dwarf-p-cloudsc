@@ -108,21 +108,21 @@ In order to do so, please create a pull request with your contribution and sign 
   Turned off by default, activate at the build stage with 
   `--cloudsc-fortran-pyiface=ON`.
 - **dwarf-cloudsc-gpu-scc-field-blocked**: A version that uses FIELD API for
-data offload and SCC the SCC loop layout, with a double blocked driver loop that
-offloads the data in chunks and make it possible to run arbitrarily large problem sizes.
+data offload and the SCC loop layout, with a double blocked driver loop that
+offloads the data in chunks and enables running arbitrarily large problem sizes.
 Two environment variables can be used to configure this variant:
   * ``CLOUDSC_BLOCKING_CHUNK_SIZE`` (default ``512``) - The chunk size (the number
-of of  ``NPROMA`` blocks) that will be processed in each iteration.
+of  ``NPROMA`` blocks) that will be processed in each iteration.
   * ``CLOUDSC_FIELD_API_PINNED`` (default ``OFF``) - If turned ``ON`` fields will be allocated
 in page-locked memory.
 - **dwarf-cloudsc-gpu-scc-field-async**: A version that uses FIELD API for
-data offload and SCC the SCC loop layout, with a double blocked driver loop that
-offloads the data in chunks and make it possible to run arbitrarily large problem sizes. Three
+data offload and the SCC loop layout, with a double blocked driver loop that
+offloads the data in chunks and enables running arbitrarily large problem sizes. Three
 environment variables can be used to configure this variant:
   * ``CLOUDSC_BLOCKING_CHUNK_SIZE`` (default ``512``) - The chunk size (the number
 of ``NPROMA`` blocks) that will be processed in each iteration.
-  * ``CLOUDSC_ASYNC_NQUEUES`` (default ``3``) - The number of queues used by the async variant.
-  * ``CLOUDSC_FIELD_API_PINNED`` (default ``OFF``) - If CUDA ie enabled this variable **should be set to ``ON``**.
+  * ``CLOUDSC_ASYNC_NQUEUES`` (default ``3``) - The number of queues (i.e. CUDA streams) used by the async variant.
+  * ``CLOUDSC_FIELD_API_PINNED`` (default ``OFF``) - If CUDA is enabled, then this variable **should be set to ``ON``**.
 This will ensure that fields are allocated in page-locked memory and that the kernel and data transfers are executed
 asynchronously.
 - **dwarf-cloudsc-fortran-atlas**: A version of **dwarf-cloudsc-fortran** which uses the [Atlas library](https://github.com/ecmwf/atlas) 
