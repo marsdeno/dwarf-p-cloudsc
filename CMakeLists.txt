@@ -108,17 +108,9 @@ endif()
 ### Mix variants
 
 ecbuild_add_option( FEATURE CLOUDSC_MIX
-        DESCRIPTION "Build the mix version CLOUDSC (Fortran driver + OpenMP/OpenACC + HIP/CUDA/SYCL" DEFAULT OFF
-        CONDITION Serialbox_FOUND OR HDF5_FOUND
+	DESCRIPTION "Build the mix version CLOUDSC (Fortran driver + OpenMP/OpenACC + HIP/CUDA/SYCL" DEFAULT ON
+	CONDITION (HAVE_CUDA OR HAVE_HIP OR HAVE_SYCL) AND (HAVE_ACC OR HAVE_OMP)
 )
-if (NOT ENABLE_CLOUDSC_MIX)
-  # enable 'MIX' variant via OpenACC and CUDA nevertheless
-  if (HAVE_ACC AND HAVE_CUDA)
-    set (HAVE_CLOUDSC_MIX TRUE )
-    set( CLOUDSC_GPU_OFFLOAD ACC )
-    set( CLOUDSC_GPU_LANG CUDA )
-  endif()
-endif()
 
 ### Enable/disable specific variants
 

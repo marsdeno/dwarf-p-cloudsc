@@ -19,29 +19,47 @@ if( "${prec}" STREQUAL "dp" )
     set(OMP_OFFLOAD "2")
 
     # Select offload model
-    if( NOT DEFINED CLOUDSC_GPU_OFFLOAD )
-      set(CLOUDSC_GPU_OFFLOAD "ACC")
-    endif()
-    if( NOT ${CLOUDSC_GPU_OFFLOAD} MATCHES "ACC|OMP" )
-      message(FATAL_ERROR "CLOUDSC_GPU_OFFLOAD: '${CLOUDSC_GPU_OFFLOAD}' is not a valid option! (Allowed: 'ACC' and 'OMP')")
+    if( HAVE_ACC )
+        set( INIT_GPU_OFFLOAD "ACC" )
+    elseif( HAVE_OMP )
+        set( INIT_GPU_OFFLOAD "OMP" )
+    else()
+        set( INIT_GPU_OFFLOAD "UNDEFINED" )
     endif()
 
-    set(GPU_OFFLOAD ${${CLOUDSC_GPU_OFFLOAD}_OFFLOAD})
+    if ( NOT DEFINED(CLOUDSC_MIX_GPU_OFFLOAD ))
+      set( CLOUDSC_MIX_GPU_OFFLOAD ${INIT_GPU_OFFLOAD} CACHE STRING "The programming model to use for data offload in mix variants (ACC or OMP)" )
+    endif()
+
+    if ( NOT ${CLOUDSC_MIX_GPU_OFFLOAD} MATCHES "ACC|OMP" )
+      message(FATAL_ERROR "CLOUDSC_MIX_GPU_OFFLOAD: '${CLOUDSC_MIX_GPU_OFFLOAD}' is not a valid option! (Allowed: 'ACC' and 'OMP')")
+    endif()
+    set(GPU_OFFLOAD ${${CLOUDSC_MIX_GPU_OFFLOAD}_OFFLOAD})
 
     # Select kernel language
-    if( NOT DEFINED CLOUDSC_GPU_LANG )
-      set(CLOUDSC_GPU_LANG "CUDA")
-    endif()
-    if( NOT ${CLOUDSC_GPU_LANG} MATCHES "CUDA|HIP|SYCL" )
-      message(FATAL_ERROR "CLOUDSC_GPU_LANG: '${CLOUDSC_GPU_LANG}' is not a valid option! (Allowed: 'CUDA', 'HIP' and 'SYCL')")
+    if( HAVE_CUDA )
+        set( INIT_GPU_LANG "CUDA" )
+    elseif( HAVE_HIP )
+        set( INIT_GPU_LANG "HIP" )
+    elseif( HAVE_SYCL )
+        set( INIT_GPU_LANG "SYCL" )
+    else()
+        set( INIT_GPU_LANG "UNDEFINED" )
     endif()
 
-    set(GPU_LANG ${${CLOUDSC_GPU_LANG}_LANG})
+    if ( NOT DEFINED(${CLOUDSC_MIX_GPU_LANG}) ) 
+      set( CLOUDSC_MIX_GPU_LANG ${INIT_GPU_LANG} CACHE STRING "The kernel language to use in mix variants (CUDA, HIP or SYCL)" )
+    endif()
 
-    if (CLOUDSC_GPU_LANG STREQUAL "CUDA")
+    if ( NOT ${CLOUDSC_MIX_GPU_LANG} MATCHES "CUDA|HIP|SYCL" )
+      message(FATAL_ERROR "CLOUDSC_MIX_GPU_LANG: '${CLOUDSC_MIX_GPU_LANG}' is not a valid option! (Allowed: 'CUDA', 'HIP' and 'SYCL')")
+    endif()
+    set(GPU_LANG ${${CLOUDSC_MIX_GPU_LANG}_LANG})
+
+    if (CLOUDSC_MIX_GPU_LANG STREQUAL "CUDA")
 	enable_language(CUDA)
 	set(CMAKE_CUDA_FLAGS "-O3 -ffast-math")
-    elseif (CLOUDSC_GPU_LANG STREQUAL "HIP")
+    elseif (CLOUDSC_MIX_GPU_LANG STREQUAL "HIP")
 	if(NOT DEFINED ROCM_PATH)
           if(DEFINED ENV{ROCM_PATH})
             set(ROCM_PATH $ENV{ROCM_PATH} CACHE PATH "Path to which ROCM has been installed")
@@ -52,7 +70,7 @@ if( "${prec}" STREQUAL "dp" )
 	enable_language(HIP)
         find_package(hip REQUIRED)
 	set(CMAKE_HIP_FLAGS "${CMAKE_HIP_FLAGS} -O3 -ffast-math")
-    elseif (CLOUDSC_GPU_LANG STREQUAL "SYCL")
+    elseif (CLOUDSC_MIX_GPU_LANG STREQUAL "SYCL")
 	enable_language(CXX)
         set(CMAKE_CXX_STANDARD 17)
     endif()
@@ -71,6 +89,7 @@ if( "${prec}" STREQUAL "dp" )
     	    PUBLIC_LIBS
                 $<${HAVE_OMP}:OpenMP::OpenMP_Fortran>
                 $<${HAVE_ACC}:OpenACC::OpenACC_Fortran>
+		$<${HAVE_CUDA}:CUDA::cudart>
 		cloudsc-common-${prec}-lib
     )
 
@@ -82,26 +101,18 @@ if( "${prec}" STREQUAL "dp" )
     target_include_directories(dwarf-cloudsc-gpu-lib-${prec} PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>)
 
     # CUDA specific
-    if (CLOUDSC_GPU_LANG STREQUAL "CUDA")
+    if (CLOUDSC_MIX_GPU_LANG STREQUAL "CUDA")
       set_source_files_properties(cloudsc_c_k_caching.cpp PROPERTIES LANGUAGE CUDA)
-      target_include_directories(
-        dwarf-cloudsc-gpu-lib-${prec}
-        PUBLIC
-        ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES}
+      target_compile_options( dwarf-cloudsc-gpu-lib-${prec}
+          PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:SHELL:${CLOUDSC_CUDA_OPT_FLAGS} ${CLOUDSC_CUDA_FLAGS}>
       )
-      if (NOT DEFINED CMAKE_CUDA_ARCHITECTURES)
-        target_compile_options(dwarf-cloudsc-gpu-lib-${prec} PRIVATE $<COMPILE_LANGUAGE:CUDA>)
-      else()
-        target_compile_options(dwarf-cloudsc-gpu-lib-${prec} PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:
-	  -gencode arch=compute_${CMAKE_CUDA_ARCHITECTURES},code=sm_${CMAKE_CUDA_ARCHITECTURES}>)
-      endif()
       set_target_properties( dwarf-cloudsc-gpu-lib-${prec} PROPERTIES CUDA_SEPARABLE_COMPILATION ON) 
     # HIP specific
-    elseif (CLOUDSC_GPU_LANG STREQUAL "HIP")
+    elseif (CLOUDSC_MIX_GPU_LANG STREQUAL "HIP")
       set_source_files_properties(cloudsc_c_k_caching.cpp PROPERTIES LANGUAGE HIP)
       target_compile_options(dwarf-cloudsc-gpu-lib-${prec} PRIVATE --offload-arch=gfx90a) 
     # SYCL specific
-    elseif (CLOUDSC_GPU_LANG STREQUAL "SYCL")
+    elseif (CLOUDSC_MIX_GPU_LANG STREQUAL "SYCL")
     
     else ()
     
@@ -116,16 +127,13 @@ if( "${prec}" STREQUAL "dp" )
     set_target_properties(dwarf-cloudsc-mix-${prec} PROPERTIES LINKER_LANGUAGE Fortran)
 
     # CUDA specific
-    if (CLOUDSC_GPU_LANG STREQUAL "CUDA")
+    if (CLOUDSC_MIX_GPU_LANG STREQUAL "CUDA")
       set_target_properties( dwarf-cloudsc-mix-${prec} PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
     # HIP specific 
-    elseif (CLOUDSC_GPU_LANG STREQUAL "HIP")
+    elseif (CLOUDSC_MIX_GPU_LANG STREQUAL "HIP")
     # SYCL specific
-    elseif (CLOUDSC_GPU_LANG STREQUAL "SYCL")
+    elseif (CLOUDSC_MIX_GPU_LANG STREQUAL "SYCL")
     else ()
     endif()
-
-    execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../data ${CMAKE_CURRENT_BINARY_DIR}/../../../data )
 
 endif()
