@@ -78,7 +78,7 @@ jobs:
             compiler_cxx: icpx
             compiler_fc: ifx
             python-version: 3.11
-            cmake_options: -DENABLE_LOKI=OFF -DSYCL_COMPILE_OPTIONS=-fsycl
+            cmake_options: -DENABLE_LOKI=OFF -DSYCL_COMPILE_OPTIONS=-fsycl -DENABLE_CLOUDSC_MIX=OFF
                 # cloudsc_driver_loki_mod.idem_stack.F90(138): error #5623: **Internal compiler error: internal abort**
             ctest_options: -E gpu-omp
 
