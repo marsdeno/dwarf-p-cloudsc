@@ -27,9 +27,7 @@ if( "${prec}" STREQUAL "dp" )
         set( INIT_GPU_OFFLOAD "UNDEFINED" )
     endif()
 
-    if ( NOT DEFINED(CLOUDSC_MIX_GPU_OFFLOAD ))
-      set( CLOUDSC_MIX_GPU_OFFLOAD ${INIT_GPU_OFFLOAD} CACHE STRING "The programming model to use for data offload in mix variants (ACC or OMP)" )
-    endif()
+    set( CLOUDSC_MIX_GPU_OFFLOAD ${INIT_GPU_OFFLOAD} CACHE STRING "The programming model to use for data offload in mix variants (ACC or OMP)" )
 
     if ( NOT ${CLOUDSC_MIX_GPU_OFFLOAD} MATCHES "ACC|OMP" )
       message(FATAL_ERROR "CLOUDSC_MIX_GPU_OFFLOAD: '${CLOUDSC_MIX_GPU_OFFLOAD}' is not a valid option! (Allowed: 'ACC' and 'OMP')")
@@ -47,9 +45,7 @@ if( "${prec}" STREQUAL "dp" )
         set( INIT_GPU_LANG "UNDEFINED" )
     endif()
 
-    if ( NOT DEFINED(${CLOUDSC_MIX_GPU_LANG}) ) 
-      set( CLOUDSC_MIX_GPU_LANG ${INIT_GPU_LANG} CACHE STRING "The kernel language to use in mix variants (CUDA, HIP or SYCL)" )
-    endif()
+    set( CLOUDSC_MIX_GPU_LANG ${INIT_GPU_LANG} CACHE STRING "The kernel language to use in mix variants (CUDA, HIP or SYCL)" )
 
     if ( NOT ${CLOUDSC_MIX_GPU_LANG} MATCHES "CUDA|HIP|SYCL" )
       message(FATAL_ERROR "CLOUDSC_MIX_GPU_LANG: '${CLOUDSC_MIX_GPU_LANG}' is not a valid option! (Allowed: 'CUDA', 'HIP' and 'SYCL')")
