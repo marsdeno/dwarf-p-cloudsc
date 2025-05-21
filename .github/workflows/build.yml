@@ -197,7 +197,7 @@ jobs:
 
     - name: Build & Test
       id: build-test
-      uses: ecmwf-actions/build-package@v2
+      uses: ecmwf/build-package@v2
       with:
         self_coverage: false
         force_build: true
