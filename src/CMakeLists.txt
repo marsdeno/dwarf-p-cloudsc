@@ -37,6 +37,10 @@ foreach( prec IN LISTS CLOUDSC_PRECISIONS )
     if( HAVE_PYTHON_F2PY )
       add_subdirectory( cloudsc_python cloudsc_python.${prec} )
     endif()
+
+    if( HAVE_CLOUDSC_MIX )
+      add_subdirectory( cloudsc_mix cloudsc_mix.${prec} )
+    endif()
   endif()
 
   # Add all remaining subdirectories with precision-specific binary directories
@@ -57,10 +61,6 @@ foreach( prec IN LISTS CLOUDSC_PRECISIONS )
   endif()
   if( HAVE_SYCL )
     add_subdirectory( cloudsc_sycl cloudsc_sycl.${prec} )
-  endif()
-
-  if( HAVE_CLOUDSC_MIX )
-    add_subdirectory( cloudsc_mix cloudsc_mix.${prec} )
   endif()
 
 endforeach()
