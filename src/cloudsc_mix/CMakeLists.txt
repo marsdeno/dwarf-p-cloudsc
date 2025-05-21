@@ -21,7 +21,7 @@ if( "${prec}" STREQUAL "dp" )
     # Select offload model
     if( HAVE_ACC )
         set( INIT_GPU_OFFLOAD "ACC" )
-    elseif( HAVE_OMP )
+    elseif( HAVE_OMP_TARGET )
         set( INIT_GPU_OFFLOAD "OMP" )
     else()
         set( INIT_GPU_OFFLOAD "UNDEFINED" )
