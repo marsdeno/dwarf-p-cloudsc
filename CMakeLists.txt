@@ -54,6 +54,11 @@ ecbuild_add_option( FEATURE ACC
                     DESCRIPTION "Support for using GPUs with OpenACC"
                     REQUIRED_PACKAGES "OpenACC COMPONENTS Fortran" )
 
+ecbuild_add_option( FEATURE STDPAR
+                    DEFAULT ON
+                    DESCRIPTION "Support for using GPUs via DO CONCURRENT and OpenACC for global variable offloading"
+		    CONDITION HAVE_ACC )
+
 include(CheckLanguage)
 check_language( CUDA )
 ecbuild_add_option( FEATURE CUDA
