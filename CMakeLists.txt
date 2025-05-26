@@ -109,6 +109,14 @@ if( HAVE_SERIALBOX )
   list(APPEND CLOUDSC_DEFINITIONS HAVE_SERIALBOX)
 endif()
 
+
+### Mix variants
+
+ecbuild_add_option( FEATURE CLOUDSC_MIX
+	DESCRIPTION "Build the mix version CLOUDSC (Fortran driver + OpenMP/OpenACC + HIP/CUDA/SYCL" DEFAULT ON
+	CONDITION (HAVE_CUDA OR HAVE_HIP OR HAVE_SYCL) AND (HAVE_ACC OR HAVE_OMP_TARGET)
+)
+
 ### Enable/disable specific variants
 
 # Add loki source-to-source translation toolchain to generate code variants
