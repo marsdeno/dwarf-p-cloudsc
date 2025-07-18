@@ -159,6 +159,8 @@ if( HAVE_OMP AND HAVE_OMP_TARGET )
     cloudsc_add_common_lib(
         SUFFIX omp
         TYPE ${GPU_LINK_TYPE}
+        DEFINITIONS
+            HAVE_OMP_TARGET
         LIBS
             OpenMP::OpenMP_Fortran
     )
