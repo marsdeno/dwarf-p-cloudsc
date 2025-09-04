@@ -88,7 +88,7 @@ ecbuild_add_library(
 
     set_target_properties( dwarf-cloudsc-gpu-lib-${prec} 
                           PROPERTIES
-                          Fortran_MODULE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/module-cuda"
+                          Fortran_MODULE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/module-${CLOUDSC_MIX_GPU_LANG}"
     )
 
 
@@ -124,7 +124,7 @@ ecbuild_add_executable(
 set_target_properties(dwarf-cloudsc-mix-${prec} PROPERTIES LINKER_LANGUAGE Fortran)
 set_target_properties(dwarf-cloudsc-mix-${prec} 
                       PROPERTIES
-                      Fortran_MODULE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/module-cuda"
+                      Fortran_MODULE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/module-${CLOUDSC_MIX_GPU_LANG}"
                       )
 
 # CUDA specific
