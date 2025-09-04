@@ -15,14 +15,14 @@ if( HAVE_CUDA )
   else()
     foreach(cuda_arch IN LISTS CMAKE_CUDA_ARCHITECTURES)
        if(cuda_arch LESS 70)
-           message(WARNING "Specified CUDA architecture ${cuda_arch} is unsupported and will not compile. 
+           ecbuild_warn("Specified CUDA architecture ${cuda_arch} is unsupported and will not compile. 
                             Minimum required >= 70. I am attempting to use native CUDA architecture instead.")
            if( ${CMAKE_CUDA_ARCHITECTURES_NATIVE} LESS 70 )
-             message(FATAL_ERROR  "Native CUDA architecture ${CMAKE_CUDA_ARCHITECTURES_NATIVE} is also unsupported.
+             ecbuild_error("Native CUDA architecture ${CMAKE_CUDA_ARCHITECTURES_NATIVE} is also unsupported.
                                    Please provide proper arch file or CMAKE_CUDA_ARCHITECTURES at build time or deactivate CUDA variant.")
            else()
              set( CMAKE_CUDA_ARCHITECTURES ${CMAKE_CUDA_ARCHITECTURES_NATIVE})
-             message(WARNING "CUDA architecture is now set to ${CMAKE_CUDA_ARCHITECTURES_NATIVE} (native version)." )
+             ecbuild_warn("CUDA architecture is now set to ${CMAKE_CUDA_ARCHITECTURES_NATIVE} (native version)." )
              break()
            endif()
        endif()
