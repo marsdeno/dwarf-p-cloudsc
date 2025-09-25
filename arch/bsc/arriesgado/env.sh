@@ -24,11 +24,16 @@ module_load llvm/EPI-development
 #module_load openmpi/riscv/4.1.6_llvm1.0
 module_load openmpi/ubuntu/4.1.6_llvm1.0
 module_load hdf5/ubuntu/1.14.6_llvmEPIdev
+module_load cmake/3.28.1
 
 export FC=flang
 export CC=clang
 export CXX=clang++
 set -x
+
+export HDF5_PATH=$HDF5_INSTALL_DIR
+export MPI_HOME=/apps/riscv/ubuntu/openmpi/4.1.6_llvm1.0/
+export CPATH=/apps/riscv/ubuntu/openmpi/4.1.6_llvm1.0/include/:$CPATH
 
 # Restore tracing to stored setting
 { if [[ -n "$tracing_" ]]; then set -x; else set +x; fi } 2>/dev/null
