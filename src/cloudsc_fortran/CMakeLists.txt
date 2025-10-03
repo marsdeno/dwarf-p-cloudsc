@@ -20,6 +20,9 @@ function( cloudsc_add_fortran_exe )
         ecbuild_critical( "Unknown keywords given to cloudsc_add_fortran_exe(): \"${_CL_UNPARSED_ARGUMENTS}\"")
     endif()
 
+    add_library(rave_obj-${prec} OBJECT IMPORTED GLOBAL)
+    set_property(TARGET rave_obj-${prec} PROPERTY IMPORTED_OBJECTS /apps/x86/rave/rave-latest/interfaces/rave_user_events_f.o)
+
     ecbuild_add_executable(
         TARGET ${_CL_TARGET}-${prec}
         SOURCES
@@ -29,6 +32,7 @@ function( cloudsc_add_fortran_exe )
         LIBS
             cloudsc-common-${prec}-${_CL_COMMON_LIB}
             $<${HAVE_OMP}:OpenMP::OpenMP_Fortran>
+	    rave_obj-${prec}
         DEFINITIONS
             ${_CL_DEFINITIONS}
     )
@@ -37,6 +41,7 @@ function( cloudsc_add_fortran_exe )
         PROPERTIES
             Fortran_MODULE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/module-${_CL_TARGET}"
     )
+
 
     ecbuild_add_test(
         TARGET ${_CL_TARGET}-${prec}-serial
