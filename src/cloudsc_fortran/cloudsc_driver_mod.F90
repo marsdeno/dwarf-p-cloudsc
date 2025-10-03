@@ -8,6 +8,7 @@
 ! nor does it submit to any jurisdiction.
 
 MODULE CLOUDSC_DRIVER_MOD
+  use rave_user_events
   USE PARKIND1, ONLY: JPIM, JPIB, JPRB, JPRD
   USE YOMPHYDER, ONLY: STATE_TYPE
   USE YOECLDP, ONLY : NCLV
@@ -111,6 +112,68 @@ CONTAINS
     if (irank == 0) then
       write(0,1003) NUMPROC,NUMOMP,NGPTOTG,NPROMA,NGPBLKS
     end if
+    call rave_name_event(1000,"Code regions")
+    call rave_name_value(1000,0,"Tear Down")
+    call rave_name_value(1000,1,"Driver Loop")
+    call rave_name_value(1000,2,"Setup Consts")
+    call rave_name_value(1000,3,"Init and Tidy")
+    call rave_name_value(1000,4,"Vertical Loop")
+    call rave_name_value(1000,5,"Flux Comp")
+    call rave_name_value(1000,6,"Array Zeroing")
+    call rave_name_value(1000,7,"Tidy small cloud cover")
+    call rave_name_value(1000,8,"Tidy CLV")
+    call rave_name_value(1000,9,"Define saturation values")
+    call rave_name_value(1000,10,"Calculate liq ice fractions")
+    call rave_name_value(1000,11,"Find tropopause level")
+    call rave_name_value(1000,12,"derived variables needed")
+    call rave_name_value(1000,13,"Evaporate liquid and ice")
+    call rave_name_value(1000,14,"3.1.1 Supersaturation limit")
+    call rave_name_value(1000,15,"3.1.2 Calculate supersaturation")
+    call rave_name_value(1000,16,"supersaturation into liquid water")
+    call rave_name_value(1000,17,"3.1.3 Include supersaturation")
+    call rave_name_value(1000,18,"3.2 DETRAINMENT FROM CONVECTION")
+    call rave_name_value(1000,19,"3.3 SUBSIDENCE COMPENSATING CONVECTIVE UPDRAUGHTS")
+    call rave_name_value(1000,20,"Subsidence sink of cloud")
+    call rave_name_value(1000,21,"3.4 1st EROSION OF CLOUDS")
+    call rave_name_value(1000,22,"3.4 2nd EROSION OF CLOUDS")
+    call rave_name_value(1000,23,"3.4 CONDENSATION EVAPORATION")
+    call rave_name_value(1000,24,"3.4a")
+    call rave_name_value(1000,25,"3.4b")
+    call rave_name_value(1000,26,"Generation of new clouds")
+    call rave_name_value(1000,27,"3.7 Growth of ice")
+    call rave_name_value(1000,28,"PRECIPITATION PROCESSES")
+    call rave_name_value(1000,29,"4.2 SEDIMENTATION FALLING")
+    call rave_name_value(1000,30,"Precip cover overlap")
+    call rave_name_value(1000,31,"4.3a AUTOCONVERSION TO SNOW")
+    call rave_name_value(1000,32,"4.3b AUTOCONVERSION WARM CLOUDS")
+    call rave_name_value(1000,33,"RIMING")
+    call rave_name_value(1000,34,"4.4a  MELTING OF SNOW and ICE")
+    call rave_name_value(1000,35,"Loop over frozen hydrometeors")
+    call rave_name_value(1000,36,"4.4b FREEZING of RAIN")
+    call rave_name_value(1000,37,"4.4c FREEZING of LIQUID ")
+    call rave_name_value(1000,38,"4.5 EVAPORATION OF RAIN/SNOW")
+    call rave_name_value(1000,39,"4.5 EVAPORATION OF SNOW")
+    call rave_name_value(1000,40,"Evaporate small precipitation")
+    call rave_name_value(1000,41,"5.1 solver for cloud cover")
+    call rave_name_value(1000,42,"5.2 solver for the microphysics")
+    call rave_name_value(1000,43,"collect sink terms and mark")
+    call rave_name_value(1000,44,"calculate overshoot")
+    call rave_name_value(1000,45,"sort zratio")
+    call rave_name_value(1000,46,"scale sink terms")
+    call rave_name_value(1000,47,"recalculate sum")
+    call rave_name_value(1000,48,"recalculate scaling factor")
+    call rave_name_value(1000,49,"scale")
+    call rave_name_value(1000,50,"5.2.2 Solver lhs")
+    call rave_name_value(1000,51,"RHS of equation")
+    call rave_name_value(1000,52,"Non pivoting recursive")
+    call rave_name_value(1000,53,"Backsubstitution step 1")
+    call rave_name_value(1000,54,"step 2")
+    call rave_name_value(1000,55,"Ensure no small values")
+    call rave_name_value(1000,56,"variables needed for next level")
+    call rave_name_value(1000,57,"5.3 Precipitation/sedimentation")
+    call rave_name_value(1000,58,"6.1 Temperature")
+    call rave_name_value(1000,59,"6.2 Humidity budget")
+    call rave_name_value(1000,60,"Copy into output variable")
 
     ! Global timer for the parallel region
     CALL TIMER%START(NUMOMP)
@@ -130,7 +193,7 @@ CONTAINS
          !-- These were uninitialized : meaningful only when we compare error differences
          PCOVPTOT(:,:,IBL) = 0.0_JPRB
          TENDENCY_LOC(IBL)%cld(:,:,NCLV) = 0.0_JPRB
-
+         call rave_event_and_value(1000,1)
          CALL CLOUDSC &
               & (    1,    ICEND,    NPROMA,  NLEV,&
               & PTSPHY,&
@@ -158,6 +221,7 @@ CONTAINS
               & KFLDX, &
               & YDOMCST, YDOETHF, YDECLDP)
 
+         call rave_event_and_value(1000,0)
          ! Log number of columns processed by this thread
          CALL TIMER%THREAD_LOG(TID, IGPC=ICEND)
       ENDDO
