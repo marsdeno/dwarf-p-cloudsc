@@ -9,7 +9,7 @@
 
 MODULE CLOUDSC_GLOBAL_STATE_MOD
   ! Driver module to manage the setup and teardown of the dwarf memory state
-  USE PARKIND1,  ONLY : JPIM, JPRB
+  USE PARKIND1,  ONLY : JPIM, JPRB,JPRM
   USE YOMPHYDER, ONLY : STATE_TYPE
   USE YOECLDP,   ONLY : NCLV, YRECLDP, YRECLDP_LOAD_PARAMETERS
   USE YOMCST,    ONLY : YOMCST_LOAD_PARAMETERS
@@ -89,7 +89,7 @@ MODULE CLOUDSC_GLOBAL_STATE_MOD
     REAL(KIND=JPRB), ALLOCATABLE :: PFHPSL(:,:,:)   ! Enthalpy flux for liq
     REAL(KIND=JPRB), ALLOCATABLE :: PFHPSN(:,:,:)   ! Enthalp flux for ice
 
-    ! Underlying data buffers for AOSOA allcoated STATE_TYPE arrays
+    ! Underlying data buffers for AOSOA allocated STATE_TYPE arrays
     REAL(KIND=JPRB), ALLOCATABLE :: B_CML(:,:,:,:)
     REAL(KIND=JPRB), ALLOCATABLE :: B_TMP(:,:,:,:)
     REAL(KIND=JPRB), ALLOCATABLE :: B_LOC(:,:,:,:)
@@ -284,8 +284,15 @@ CONTAINS
     REAL(KIND=JPRB), ALLOCATABLE :: B_LOC(:,:,:,:)
 
     INTEGER(KIND=JPIM) :: NBLOCKS, KLON, KLEV, KFLDX
+    CHARACTER(LEN=:), ALLOCATABLE :: THIS_RUN_PREC
 
-    CALL INPUT_INITIALIZE(NAME='reference')
+    IF(JPRB==JPRM) THEN
+      THIS_RUN_PREC = '_sp'
+    ELSE
+      THIS_RUN_PREC = '_dp'
+    ENDIF
+
+    CALL INPUT_INITIALIZE(NAME='reference'//THIS_RUN_PREC)
 
     NBLOCKS = (NGPTOT / NPROMA) + MIN(MOD(NGPTOT,NPROMA), 1)
     CALL LOAD_SCALAR('KLON', KLON)

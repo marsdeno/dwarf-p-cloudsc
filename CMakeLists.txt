@@ -174,8 +174,11 @@ if( HAVE_HDF5 )
         "${PROJECT_SOURCE_DIR}/config-files/input.h5"
         "${CMAKE_BINARY_DIR}/input.h5" )
   file( CREATE_LINK
-        "${PROJECT_SOURCE_DIR}/config-files/reference.h5"
-        "${CMAKE_BINARY_DIR}/reference.h5" )
+        "${PROJECT_SOURCE_DIR}/config-files/reference_sp.h5"
+        "${CMAKE_BINARY_DIR}/reference_sp.h5" )
+  file( CREATE_LINK
+        "${PROJECT_SOURCE_DIR}/config-files/reference_dp.h5"
+        "${CMAKE_BINARY_DIR}/reference_dp.h5" )
 elseif( HAVE_SERIALBOX )
   file( CREATE_LINK
         "${PROJECT_SOURCE_DIR}/data"
